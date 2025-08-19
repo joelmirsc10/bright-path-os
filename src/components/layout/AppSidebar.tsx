@@ -8,7 +8,8 @@ import {
   Calendar,
   Settings,
   ChevronRight,
-  Building2
+  Building2,
+  User
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 
@@ -65,6 +66,12 @@ const navigationItems = [
 ]
 
 const settingsItems = [
+  { 
+    title: "Perfil", 
+    url: "/perfil", 
+    icon: User,
+    description: "Meu perfil e configurações"
+  },
   { 
     title: "Configurações", 
     url: "/configuracoes", 
