@@ -1,8 +1,9 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Table,
   TableBody,
@@ -21,6 +22,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { supabase } from "@/integrations/supabase/client"
+import { useToast } from "@/hooks/use-toast"
 import { 
   Search, 
   Plus, 
@@ -33,55 +36,136 @@ import {
 } from "lucide-react"
 
 export default function Clientes() {
+  const { toast } = useToast()
   const [searchTerm, setSearchTerm] = useState("")
+  const [filterStatus, setFilterStatus] = useState("todos")
+  const [sortBy, setSortBy] = useState("nome")
   const [selectedClient, setSelectedClient] = useState<any>(null)
   const [isAddingClient, setIsAddingClient] = useState(false)
   const [isViewingClient, setIsViewingClient] = useState(false)
   const [isEditingClient, setIsEditingClient] = useState(false)
+  const [clients, setClients] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
   const [formData, setFormData] = useState({
     nome: "",
-    nomeLoja: "",
+    nome_loja: "",
     documento: "",
     telefone: "",
-    email: ""
+    email: "",
+    status: "ativo"
   })
 
-  // Mock data - será substituído por dados reais do backend
-  const clients = [
-    {
-      id: 1,
-      nome: "João Silva",
-      nomeLoja: "Supermercado Silva",
-      documento: "12.345.678/0001-90",
-      telefone: "(11) 99999-9999",
-      email: "joao@silva.com",
-      status: "ativo"
-    },
-    {
-      id: 2,
-      nome: "Maria Santos",
-      nomeLoja: "Padaria Doce Vida",
-      documento: "987.654.321-00",
-      telefone: "(11) 88888-8888",
-      email: "maria@docevidqa.com",
-      status: "ativo"
-    },
-    {
-      id: 3,
-      nome: "Carlos Oliveira",
-      nomeLoja: "Farmácia Saúde+",
-      documento: "11.222.333/0001-44",
-      telefone: "(11) 77777-7777",
-      email: "carlos@saudemais.com",
-      status: "inativo"
-    }
-  ]
+  useEffect(() => {
+    fetchClients()
+  }, [])
 
-  const filteredClients = clients.filter(client =>
-    client.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.nomeLoja.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.documento.includes(searchTerm)
-  )
+  const fetchClients = async () => {
+    // Dados mock temporários até configurar o banco
+    const mockClients = [
+      {
+        id: 1,
+        nome: "João Silva",
+        nome_loja: "Supermercado Silva",
+        documento: "12.345.678/0001-90",
+        telefone: "(11) 99999-9999",
+        email: "joao@silva.com",
+        status: "ativo"
+      },
+      {
+        id: 2,
+        nome: "Maria Santos",
+        nome_loja: "Padaria Doce Vida",
+        documento: "987.654.321-00",
+        telefone: "(11) 88888-8888",
+        email: "maria@docevidqa.com",
+        status: "ativo"
+      },
+      {
+        id: 3,
+        nome: "Carlos Oliveira",
+        nome_loja: "Farmácia Saúde+",
+        documento: "11.222.333/0001-44",
+        telefone: "(11) 77777-7777",
+        email: "carlos@saudemais.com",
+        status: "inativo"
+      }
+    ]
+    
+    setClients(mockClients)
+    setLoading(false)
+  }
+
+  const saveClient = async () => {
+    const newClient = {
+      id: Date.now(),
+      ...formData
+    }
+    
+    setClients([...clients, newClient])
+    setIsAddingClient(false)
+    resetForm()
+    toast({
+      title: "Sucesso",
+      description: "Cliente adicionado com sucesso"
+    })
+  }
+
+  const updateClient = async () => {
+    const updatedClient = {
+      ...selectedClient,
+      ...formData
+    }
+    
+    setClients(clients.map(c => c.id === selectedClient.id ? updatedClient : c))
+    setIsEditingClient(false)
+    setSelectedClient(null)
+    resetForm()
+    toast({
+      title: "Sucesso",
+      description: "Cliente atualizado com sucesso"
+    })
+  }
+
+  const resetForm = () => {
+    setFormData({
+      nome: "",
+      nome_loja: "",
+      documento: "",
+      telefone: "",
+      email: "",
+      status: "ativo"
+    })
+  }
+
+  const openEditClient = (client: any) => {
+    setSelectedClient(client)
+    setFormData({
+      nome: client.nome || "",
+      nome_loja: client.nome_loja || "",
+      documento: client.documento || "",
+      telefone: client.telefone || "",
+      email: client.email || "",
+      status: client.status || "ativo"
+    })
+    setIsEditingClient(true)
+  }
+
+  const filteredClients = clients
+    .filter(client => {
+      const matchesSearch = client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           client.nome_loja?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           client.documento?.includes(searchTerm) ||
+                           client.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      
+      const matchesStatus = filterStatus === "todos" || client.status === filterStatus
+      
+      return matchesSearch && matchesStatus
+    })
+    .sort((a, b) => {
+      if (sortBy === "nome") return (a.nome || "").localeCompare(b.nome || "")
+      if (sortBy === "status") return (a.status || "").localeCompare(b.status || "")
+      return 0
+    })
 
   const getStatusBadge = (status: string) => {
     if (status === "ativo") {
@@ -118,42 +202,65 @@ export default function Clientes() {
                 <Label htmlFor="nome" className="text-right">
                   Nome
                 </Label>
-                <Input id="nome" className="col-span-3" />
+                <Input 
+                  id="nome" 
+                  className="col-span-3"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({...formData, nome: e.target.value})}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="nomeLoja" className="text-right">
                   Nome da Loja
                 </Label>
-                <Input id="nomeLoja" className="col-span-3" />
+                <Input 
+                  id="nomeLoja" 
+                  className="col-span-3"
+                  value={formData.nome_loja}
+                  onChange={(e) => setFormData({...formData, nome_loja: e.target.value})}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="documento" className="text-right">
                   CNPJ/CPF
                 </Label>
-                <Input id="documento" className="col-span-3" />
+                <Input 
+                  id="documento" 
+                  className="col-span-3"
+                  value={formData.documento}
+                  onChange={(e) => setFormData({...formData, documento: e.target.value})}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="telefone" className="text-right">
                   Telefone
                 </Label>
-                <Input id="telefone" className="col-span-3" />
+                <Input 
+                  id="telefone" 
+                  className="col-span-3"
+                  value={formData.telefone}
+                  onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+                />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="email" className="text-right">
                   Email
                 </Label>
-                <Input id="email" type="email" className="col-span-3" />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  className="col-span-3"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                />
               </div>
             </div>
             <DialogFooter>
               <Button 
                 type="submit" 
                 className="bg-gradient-primary text-white"
-                onClick={() => {
-                  // Aqui você implementaria a lógica de salvamento
-                  console.log("Salvando cliente...")
-                  setIsAddingClient(false)
-                }}
+                onClick={saveClient}
+                disabled={!formData.nome || !formData.documento}
               >
                 Salvar Cliente
               </Button>
@@ -169,16 +276,31 @@ export default function Clientes() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Buscar por nome, loja ou documento..."
+                placeholder="Buscar por nome, loja, documento ou email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="sm:w-auto">
-              <Filter className="mr-2 h-4 w-4" />
-              Filtros
-            </Button>
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos</SelectItem>
+                <SelectItem value="ativo">Ativos</SelectItem>
+                <SelectItem value="inativo">Inativos</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="nome">Nome A-Z</SelectItem>
+                <SelectItem value="status">Status</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -217,7 +339,7 @@ export default function Clientes() {
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-foreground">{client.nomeLoja}</TableCell>
+                  <TableCell className="text-foreground">{client.nome_loja}</TableCell>
                   <TableCell className="font-mono text-sm text-muted-foreground">
                     {client.documento}
                   </TableCell>
@@ -243,17 +365,7 @@ export default function Clientes() {
                       <Button 
                         variant="ghost" 
                         size="sm"
-                        onClick={() => {
-                          setSelectedClient(client)
-                          setFormData({
-                            nome: client.nome,
-                            nomeLoja: client.nomeLoja,
-                            documento: client.documento,
-                            telefone: client.telefone,
-                            email: client.email
-                          })
-                          setIsEditingClient(true)
-                        }}
+                        onClick={() => openEditClient(client)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -276,7 +388,7 @@ export default function Clientes() {
             <Building2 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-foreground">{clients.length}</div>
+            <div className="text-2xl font-bold text-foreground">{loading ? "..." : clients.length}</div>
             <p className="text-xs text-muted-foreground">
               +2 novos este mês
             </p>
@@ -292,7 +404,7 @@ export default function Clientes() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-foreground">
-              {clients.filter(c => c.status === 'ativo').length}
+              {loading ? "..." : clients.filter(c => c.status === 'ativo').length}
             </div>
             <p className="text-xs text-muted-foreground">
               {Math.round((clients.filter(c => c.status === 'ativo').length / clients.length) * 100)}% do total
@@ -333,7 +445,7 @@ export default function Clientes() {
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-medium">Nome da Loja:</Label>
-                <span className="col-span-3">{selectedClient.nomeLoja}</span>
+                <span className="col-span-3">{selectedClient.nome_loja}</span>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label className="text-right font-medium">CNPJ/CPF:</Label>
@@ -380,8 +492,8 @@ export default function Clientes() {
               <Input 
                 id="edit-nomeLoja" 
                 className="col-span-3"
-                value={formData.nomeLoja}
-                onChange={(e) => setFormData({...formData, nomeLoja: e.target.value})}
+                value={formData.nome_loja}
+                onChange={(e) => setFormData({...formData, nome_loja: e.target.value})}
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -414,17 +526,14 @@ export default function Clientes() {
             </div>
           </div>
           <DialogFooter>
-            <Button 
-              type="submit" 
-              className="bg-gradient-primary text-white"
-              onClick={() => {
-                // Aqui você implementaria a lógica de atualização
-                console.log("Atualizando cliente...", formData)
-                setIsEditingClient(false)
-              }}
-            >
-              Salvar Alterações
-            </Button>
+              <Button 
+                type="submit" 
+                className="bg-gradient-primary text-white"
+                onClick={updateClient}
+                disabled={!formData.nome || !formData.documento}
+              >
+                Salvar Alterações
+              </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
