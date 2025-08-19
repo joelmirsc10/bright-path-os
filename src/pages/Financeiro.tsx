@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Switch } from "@/components/ui/switch"
+import { Checkbox } from "@/components/ui/checkbox"
 import { 
   Plus, 
   TrendingUp, 
@@ -37,15 +38,39 @@ import {
   DollarSign,
   Calendar,
   Filter,
-  Download
+  Download,
+  Edit,
+  Trash2
 } from "lucide-react"
 
 export default function Financeiro() {
   const [isAddingTransaction, setIsAddingTransaction] = useState(false)
+  const [isAddingCategory, setIsAddingCategory] = useState(false)
+  const [isEditingTransaction, setIsEditingTransaction] = useState(false)
+  const [selectedTransaction, setSelectedTransaction] = useState<any>(null)
   const [transactionType, setTransactionType] = useState("receita")
+  const [isRecurrent, setIsRecurrent] = useState(false)
+  const [isPaid, setIsPaid] = useState(true)
+
+  const [formData, setFormData] = useState({
+    tipo: "receita",
+    descricao: "",
+    valor: "",
+    categoria: "",
+    data: "",
+    recorrente: false,
+    tipoRecorrencia: "fixo",
+    repeticao: 1,
+    intervalo: "meses",
+    parcelaAtual: 1,
+    totalParcelas: 1,
+    valorTotal: "",
+    valorParcela: "",
+    status: true
+  })
 
   // Mock data
-  const transactions = [
+  const [transactions, setTransactions] = useState([
     {
       id: 1,
       tipo: "receita",
@@ -53,8 +78,10 @@ export default function Financeiro() {
       valor: 2500.00,
       categoria: "Vendas",
       data: "2024-12-15",
-      status: "confirmado",
-      recorrente: false
+      status: "realizado",
+      recorrente: false,
+      tipoRecorrencia: null,
+      parcelas: "1/1"
     },
     {
       id: 2,
@@ -63,8 +90,10 @@ export default function Financeiro() {
       valor: 450.00,
       categoria: "Operacional",
       data: "2024-12-14",
-      status: "confirmado",
-      recorrente: true
+      status: "realizado",
+      recorrente: true,
+      tipoRecorrencia: "fixo",
+      parcelas: "1/12"
     },
     {
       id: 3,
@@ -74,27 +103,33 @@ export default function Financeiro() {
       categoria: "Turismo",
       data: "2024-12-13",
       status: "pendente",
-      recorrente: false
+      recorrente: false,
+      tipoRecorrencia: null,
+      parcelas: "1/1"
     }
-  ]
+  ])
 
-  const categories = ["Vendas", "Turismo", "Operacional", "Marketing", "Administração"]
+  const [categories, setCategories] = useState([
+    "Vendas", "Turismo", "Operacional", "Marketing", "Administração"
+  ])
+
+  const [newCategory, setNewCategory] = useState("")
 
   const totalReceitas = transactions
-    .filter(t => t.tipo === "receita")
+    .filter(t => t.tipo === "receita" && t.status === "realizado")
     .reduce((sum, t) => sum + t.valor, 0)
 
   const totalDespesas = transactions
-    .filter(t => t.tipo === "despesa")
+    .filter(t => t.tipo === "despesa" && t.status === "realizado")
     .reduce((sum, t) => sum + t.valor, 0)
 
   const saldoTotal = totalReceitas - totalDespesas
 
   const getStatusBadge = (status: string) => {
-    if (status === "confirmado") {
-      return <Badge className="bg-success/10 text-success border-success/20">Confirmado</Badge>
+    if (status === "realizado") {
+      return <Badge className="bg-success/10 text-success border-success/20">Realizado</Badge>
     }
-    return <Badge variant="secondary">Pendente</Badge>
+    return <Badge className="bg-warning/10 text-warning border-warning/20">Pendente</Badge>
   }
 
   const getTypeBadge = (tipo: string) => {
@@ -102,6 +137,94 @@ export default function Financeiro() {
       return <Badge className="bg-success/10 text-success border-success/20">Receita</Badge>
     }
     return <Badge className="bg-destructive/10 text-destructive border-destructive/20">Despesa</Badge>
+  }
+
+  const handleSaveTransaction = () => {
+    const newTransaction = {
+      id: Date.now(),
+      tipo: formData.tipo,
+      descricao: formData.descricao,
+      valor: parseFloat(formData.valor),
+      categoria: formData.categoria,
+      data: formData.data,
+      status: formData.status ? "realizado" : "pendente",
+      recorrente: formData.recorrente,
+      tipoRecorrencia: formData.recorrente ? formData.tipoRecorrencia : null,
+      parcelas: formData.recorrente && formData.tipoRecorrencia === "parcelado" 
+        ? `${formData.parcelaAtual}/${formData.totalParcelas}` 
+        : "1/1"
+    }
+
+    setTransactions([...transactions, newTransaction])
+    setIsAddingTransaction(false)
+    setFormData({
+      tipo: "receita",
+      descricao: "",
+      valor: "",
+      categoria: "",
+      data: "",
+      recorrente: false,
+      tipoRecorrencia: "fixo",
+      repeticao: 1,
+      intervalo: "meses",
+      parcelaAtual: 1,
+      totalParcelas: 1,
+      valorTotal: "",
+      valorParcela: "",
+      status: true
+    })
+  }
+
+  const handleEditTransaction = () => {
+    setTransactions(transactions.map(t => 
+      t.id === selectedTransaction.id 
+        ? {
+            ...t,
+            tipo: formData.tipo,
+            descricao: formData.descricao,
+            valor: parseFloat(formData.valor),
+            categoria: formData.categoria,
+            data: formData.data,
+            status: formData.status ? "realizado" : "pendente",
+            recorrente: formData.recorrente,
+            tipoRecorrencia: formData.recorrente ? formData.tipoRecorrencia : null,
+            parcelas: formData.recorrente && formData.tipoRecorrencia === "parcelado" 
+              ? `${formData.parcelaAtual}/${formData.totalParcelas}` 
+              : "1/1"
+          }
+        : t
+    ))
+    setIsEditingTransaction(false)
+    setSelectedTransaction(null)
+  }
+
+  const handleAddCategory = () => {
+    if (newCategory && !categories.includes(newCategory)) {
+      setCategories([...categories, newCategory])
+      setNewCategory("")
+      setIsAddingCategory(false)
+    }
+  }
+
+  const openEditTransaction = (transaction: any) => {
+    setSelectedTransaction(transaction)
+    setFormData({
+      tipo: transaction.tipo,
+      descricao: transaction.descricao,
+      valor: transaction.valor.toString(),
+      categoria: transaction.categoria,
+      data: transaction.data,
+      recorrente: transaction.recorrente,
+      tipoRecorrencia: transaction.tipoRecorrencia || "fixo",
+      repeticao: 1,
+      intervalo: "meses",
+      parcelaAtual: parseInt(transaction.parcelas.split('/')[0]) || 1,
+      totalParcelas: parseInt(transaction.parcelas.split('/')[1]) || 1,
+      valorTotal: "",
+      valorParcela: "",
+      status: transaction.status === "realizado"
+    })
+    setIsEditingTransaction(true)
   }
 
   return (
@@ -113,87 +236,253 @@ export default function Financeiro() {
           <p className="text-muted-foreground">Controle financeiro da empresa</p>
         </div>
 
-        <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-primary text-white shadow-glow">
-              <Plus className="mr-2 h-4 w-4" />
-              Nova Transação
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle>Adicionar Transação</DialogTitle>
-              <DialogDescription>
-                Registre uma nova receita ou despesa da empresa.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="tipo" className="text-right">
-                  Tipo
-                </Label>
-                <Select value={transactionType} onValueChange={setTransactionType}>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="receita">Receita</SelectItem>
-                    <SelectItem value="despesa">Despesa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="descricao" className="text-right">
-                  Descrição
-                </Label>
-                <Textarea id="descricao" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="valor" className="text-right">
-                  Valor
-                </Label>
-                <Input id="valor" type="number" placeholder="0,00" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="categoria" className="text-right">
-                  Categoria
-                </Label>
-                <Select>
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Selecionar categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="data" className="text-right">
-                  Data
-                </Label>
-                <Input id="data" type="date" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="recorrente" className="text-right">
-                  Recorrente
-                </Label>
-                <div className="col-span-3 flex items-center space-x-2">
-                  <Switch id="recorrente" />
-                  <Label htmlFor="recorrente" className="text-sm">
-                    Esta transação se repete
+        <div className="flex gap-2">
+          <Dialog open={isAddingCategory} onOpenChange={setIsAddingCategory}>
+            <DialogTrigger asChild>
+              <Button variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Categoria
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle>Nova Categoria</DialogTitle>
+                <DialogDescription>
+                  Crie uma nova categoria para organizar suas transações.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="categoria-nome" className="text-right">
+                    Nome
                   </Label>
+                  <Input 
+                    id="categoria-nome" 
+                    className="col-span-3"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    placeholder="Ex: Manutenção"
+                  />
                 </div>
               </div>
-            </div>
-            <DialogFooter>
-              <Button type="submit" className="bg-gradient-primary text-white">
-                Salvar Transação
+              <DialogFooter>
+                <Button onClick={handleAddCategory} className="bg-gradient-primary text-white">
+                  Criar Categoria
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isAddingTransaction} onOpenChange={setIsAddingTransaction}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary text-white shadow-glow">
+                <Plus className="mr-2 h-4 w-4" />
+                Nova Transação
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Adicionar Transação</DialogTitle>
+                <DialogDescription>
+                  Registre uma nova receita ou despesa da empresa.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="tipo" className="text-right">Tipo</Label>
+                  <Select value={formData.tipo} onValueChange={(value) => setFormData({...formData, tipo: value})}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="receita">Receita</SelectItem>
+                      <SelectItem value="despesa">Despesa</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="descricao" className="text-right">Descrição</Label>
+                  <Textarea 
+                    id="descricao" 
+                    className="col-span-3"
+                    value={formData.descricao}
+                    onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="valor" className="text-right">Valor</Label>
+                  <Input 
+                    id="valor" 
+                    type="number" 
+                    placeholder="0,00" 
+                    className="col-span-3"
+                    value={formData.valor}
+                    onChange={(e) => setFormData({...formData, valor: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="categoria" className="text-right">Categoria</Label>
+                  <Select value={formData.categoria} onValueChange={(value) => setFormData({...formData, categoria: value})}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Selecionar categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map(cat => (
+                        <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="data" className="text-right">Data</Label>
+                  <Input 
+                    id="data" 
+                    type="date" 
+                    className="col-span-3"
+                    value={formData.data}
+                    onChange={(e) => setFormData({...formData, data: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Status</Label>
+                  <div className="col-span-3 flex items-center space-x-2">
+                    <Checkbox 
+                      id="status"
+                      checked={formData.status}
+                      onCheckedChange={(checked) => setFormData({...formData, status: !!checked})}
+                    />
+                    <Label htmlFor="status" className="text-sm">
+                      Pagamento realizado
+                    </Label>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">Recorrente</Label>
+                  <div className="col-span-3 flex items-center space-x-2">
+                    <Switch 
+                      checked={formData.recorrente}
+                      onCheckedChange={(checked) => setFormData({...formData, recorrente: checked})}
+                    />
+                    <Label className="text-sm">Esta transação se repete</Label>
+                  </div>
+                </div>
+
+                {formData.recorrente && (
+                  <>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Tipo de Recorrência</Label>
+                      <div className="col-span-3 space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            id="parcelado" 
+                            name="tipoRecorrencia" 
+                            value="parcelado"
+                            checked={formData.tipoRecorrencia === "parcelado"}
+                            onChange={(e) => setFormData({...formData, tipoRecorrencia: e.target.value})}
+                          />
+                          <Label htmlFor="parcelado">Parcelado</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <input 
+                            type="radio" 
+                            id="fixo" 
+                            name="tipoRecorrencia" 
+                            value="fixo"
+                            checked={formData.tipoRecorrencia === "fixo"}
+                            onChange={(e) => setFormData({...formData, tipoRecorrencia: e.target.value})}
+                          />
+                          <Label htmlFor="fixo">Fixo</Label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label className="text-right">Repetir a cada</Label>
+                      <div className="col-span-3 flex gap-2">
+                        <Input 
+                          type="number" 
+                          min="1"
+                          className="w-20"
+                          value={formData.repeticao}
+                          onChange={(e) => setFormData({...formData, repeticao: parseInt(e.target.value)})}
+                        />
+                        <Select value={formData.intervalo} onValueChange={(value) => setFormData({...formData, intervalo: value})}>
+                          <SelectTrigger className="flex-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="dias">Dias</SelectItem>
+                            <SelectItem value="semanas">Semanas</SelectItem>
+                            <SelectItem value="meses">Meses</SelectItem>
+                            <SelectItem value="anos">Anos</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    {formData.tipoRecorrencia === "parcelado" && (
+                      <>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label className="text-right">Parcela Atual</Label>
+                          <Input 
+                            type="number" 
+                            min="1"
+                            className="col-span-3"
+                            value={formData.parcelaAtual}
+                            onChange={(e) => setFormData({...formData, parcelaAtual: parseInt(e.target.value)})}
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label className="text-right">Total de Parcelas</Label>
+                          <Input 
+                            type="number" 
+                            min="1"
+                            className="col-span-3"
+                            value={formData.totalParcelas}
+                            onChange={(e) => setFormData({...formData, totalParcelas: parseInt(e.target.value)})}
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label className="text-right">Valor Total</Label>
+                          <Input 
+                            type="number" 
+                            className="col-span-3"
+                            value={formData.valorTotal}
+                            onChange={(e) => setFormData({...formData, valorTotal: e.target.value})}
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-4 items-center gap-4">
+                          <Label className="text-right">Valor da Parcela</Label>
+                          <Input 
+                            type="number" 
+                            className="col-span-3"
+                            value={formData.valorParcela}
+                            onChange={(e) => setFormData({...formData, valorParcela: e.target.value})}
+                          />
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
+              <DialogFooter>
+                <Button onClick={handleSaveTransaction} className="bg-gradient-primary text-white">
+                  Salvar Transação
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -315,6 +604,7 @@ export default function Financeiro() {
                 <TableHead>Data</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Recorrente</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -338,10 +628,28 @@ export default function Financeiro() {
                   <TableCell>{getStatusBadge(transaction.status)}</TableCell>
                   <TableCell>
                     {transaction.recorrente ? (
-                      <Badge variant="outline">Sim</Badge>
+                      <div>
+                        <Badge variant="outline">Sim</Badge>
+                        {transaction.tipoRecorrencia === "parcelado" && (
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {transaction.parcelas}
+                          </div>
+                        )}
+                      </div>
                     ) : (
                       <Badge variant="secondary">Não</Badge>
                     )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => openEditTransaction(transaction)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -349,6 +657,98 @@ export default function Financeiro() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Edit Transaction Dialog */}
+      <Dialog open={isEditingTransaction} onOpenChange={setIsEditingTransaction}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Editar Transação</DialogTitle>
+            <DialogDescription>
+              Altere as informações da transação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-tipo" className="text-right">Tipo</Label>
+              <Select value={formData.tipo} onValueChange={(value) => setFormData({...formData, tipo: value})}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="receita">Receita</SelectItem>
+                  <SelectItem value="despesa">Despesa</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-descricao" className="text-right">Descrição</Label>
+              <Textarea 
+                id="edit-descricao" 
+                className="col-span-3"
+                value={formData.descricao}
+                onChange={(e) => setFormData({...formData, descricao: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-valor" className="text-right">Valor</Label>
+              <Input 
+                id="edit-valor" 
+                type="number" 
+                placeholder="0,00" 
+                className="col-span-3"
+                value={formData.valor}
+                onChange={(e) => setFormData({...formData, valor: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-categoria" className="text-right">Categoria</Label>
+              <Select value={formData.categoria} onValueChange={(value) => setFormData({...formData, categoria: value})}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Selecionar categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-data" className="text-right">Data</Label>
+              <Input 
+                id="edit-data" 
+                type="date" 
+                className="col-span-3"
+                value={formData.data}
+                onChange={(e) => setFormData({...formData, data: e.target.value})}
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Status</Label>
+              <div className="col-span-3 flex items-center space-x-2">
+                <Checkbox 
+                  id="edit-status"
+                  checked={formData.status}
+                  onCheckedChange={(checked) => setFormData({...formData, status: !!checked})}
+                />
+                <Label htmlFor="edit-status" className="text-sm">
+                  Pagamento realizado
+                </Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleEditTransaction} className="bg-gradient-primary text-white">
+              Salvar Alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

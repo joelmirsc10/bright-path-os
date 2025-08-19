@@ -34,8 +34,17 @@ import {
 
 export default function Clientes() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [selectedClient, setSelectedClient] = useState(null)
+  const [selectedClient, setSelectedClient] = useState<any>(null)
   const [isAddingClient, setIsAddingClient] = useState(false)
+  const [isViewingClient, setIsViewingClient] = useState(false)
+  const [isEditingClient, setIsEditingClient] = useState(false)
+  const [formData, setFormData] = useState({
+    nome: "",
+    nomeLoja: "",
+    documento: "",
+    telefone: "",
+    email: ""
+  })
 
   // Mock data - será substituído por dados reais do backend
   const clients = [
@@ -137,7 +146,15 @@ export default function Clientes() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="bg-gradient-primary text-white">
+              <Button 
+                type="submit" 
+                className="bg-gradient-primary text-white"
+                onClick={() => {
+                  // Aqui você implementaria a lógica de salvamento
+                  console.log("Salvando cliente...")
+                  setIsAddingClient(false)
+                }}
+              >
                 Salvar Cliente
               </Button>
             </DialogFooter>
@@ -213,10 +230,31 @@ export default function Clientes() {
                   <TableCell>{getStatusBadge(client.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedClient(client)
+                          setIsViewingClient(true)
+                        }}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedClient(client)
+                          setFormData({
+                            nome: client.nome,
+                            nomeLoja: client.nomeLoja,
+                            documento: client.documento,
+                            telefone: client.telefone,
+                            email: client.email
+                          })
+                          setIsEditingClient(true)
+                        }}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                     </div>
@@ -277,6 +315,119 @@ export default function Clientes() {
           </CardContent>
         </Card>
       </div>
+
+      {/* View Client Dialog */}
+      <Dialog open={isViewingClient} onOpenChange={setIsViewingClient}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Detalhes do Cliente</DialogTitle>
+            <DialogDescription>
+              Informações completas do cliente
+            </DialogDescription>
+          </DialogHeader>
+          {selectedClient && (
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-medium">Nome:</Label>
+                <span className="col-span-3">{selectedClient.nome}</span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-medium">Nome da Loja:</Label>
+                <span className="col-span-3">{selectedClient.nomeLoja}</span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-medium">CNPJ/CPF:</Label>
+                <span className="col-span-3">{selectedClient.documento}</span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-medium">Telefone:</Label>
+                <span className="col-span-3">{selectedClient.telefone}</span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-medium">Email:</Label>
+                <span className="col-span-3">{selectedClient.email}</span>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label className="text-right font-medium">Status:</Label>
+                <span className="col-span-3">{getStatusBadge(selectedClient.status)}</span>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Client Dialog */}
+      <Dialog open={isEditingClient} onOpenChange={setIsEditingClient}>
+        <DialogContent className="sm:max-w-[525px]">
+          <DialogHeader>
+            <DialogTitle>Editar Cliente</DialogTitle>
+            <DialogDescription>
+              Altere as informações do cliente abaixo.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-nome" className="text-right">Nome</Label>
+              <Input 
+                id="edit-nome" 
+                className="col-span-3"
+                value={formData.nome}
+                onChange={(e) => setFormData({...formData, nome: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-nomeLoja" className="text-right">Nome da Loja</Label>
+              <Input 
+                id="edit-nomeLoja" 
+                className="col-span-3"
+                value={formData.nomeLoja}
+                onChange={(e) => setFormData({...formData, nomeLoja: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-documento" className="text-right">CNPJ/CPF</Label>
+              <Input 
+                id="edit-documento" 
+                className="col-span-3"
+                value={formData.documento}
+                onChange={(e) => setFormData({...formData, documento: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-telefone" className="text-right">Telefone</Label>
+              <Input 
+                id="edit-telefone" 
+                className="col-span-3"
+                value={formData.telefone}
+                onChange={(e) => setFormData({...formData, telefone: e.target.value})}
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-email" className="text-right">Email</Label>
+              <Input 
+                id="edit-email" 
+                type="email" 
+                className="col-span-3"
+                value={formData.email}
+                onChange={(e) => setFormData({...formData, email: e.target.value})}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              type="submit" 
+              className="bg-gradient-primary text-white"
+              onClick={() => {
+                // Aqui você implementaria a lógica de atualização
+                console.log("Atualizando cliente...", formData)
+                setIsEditingClient(false)
+              }}
+            >
+              Salvar Alterações
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

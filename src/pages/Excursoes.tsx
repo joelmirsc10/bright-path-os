@@ -341,10 +341,22 @@ export default function Excursoes() {
                   <TableCell>{getStatusBadge(excursion.status)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          console.log("Visualizar excursão:", excursion.id)
+                        }}
+                      >
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm">
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => {
+                          console.log("Editar excursão:", excursion.id)
+                        }}
+                      >
                         <Edit className="h-4 w-4" />
                       </Button>
                     </div>
@@ -358,9 +370,21 @@ export default function Excursoes() {
 
       {/* Recent Passengers */}
       <Card className="border-border bg-card/50 backdrop-blur">
-        <CardHeader>
-          <CardTitle className="text-foreground">Passageiros Recentes</CardTitle>
-          <CardDescription>Últimas reservas realizadas</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="text-foreground">Passageiros Recentes</CardTitle>
+            <CardDescription>Últimas reservas realizadas</CardDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              console.log("Adicionar novo passageiro")
+            }}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Novo Passageiro
+          </Button>
         </CardHeader>
         <CardContent>
           <Table>
