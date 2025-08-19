@@ -46,6 +46,12 @@ const navigationItems = [
     description: "Controle financeiro"
   },
   { 
+    title: "Cobrança", 
+    url: "/cobranca", 
+    icon: Receipt,
+    description: "Sistema de cobrança"
+  },
+  { 
     title: "Mensagens", 
     url: "/mensagens", 
     icon: MessageSquare,

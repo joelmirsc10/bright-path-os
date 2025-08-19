@@ -30,11 +30,37 @@ import {
   Users,
   Bus,
   Eye,
-  Edit
+  Edit,
+  Trash2
 } from "lucide-react"
+import { PassageiroDialog } from "@/components/PassageiroDialog"
 
 export default function Excursoes() {
   const [isCreatingExcursion, setIsCreatingExcursion] = useState(false)
+  const [isPassageiroDialogOpen, setIsPassageiroDialogOpen] = useState(false)
+  const [selectedPassageiro, setSelectedPassageiro] = useState(null)
+  const [passageiros, setPassageiros] = useState([
+    {
+      id: 1,
+      excursaoId: 1,
+      nome: "Ana Silva",
+      rg: "12.345.678-9",
+      idade: 35,
+      telefone: "(11) 99999-9999",
+      poltrona: 15,
+      statusPagamento: "pago"
+    },
+    {
+      id: 2,
+      excursaoId: 1,
+      nome: "Carlos Santos",
+      rg: "98.765.432-1",
+      idade: 42,
+      telefone: "(11) 88888-8888",
+      poltrona: 16,
+      statusPagamento: "pendente"
+    }
+  ])
 
   // Mock data
   const excursions = [
@@ -82,28 +108,23 @@ export default function Excursoes() {
     }
   ]
 
-  const passengers = [
-    {
-      id: 1,
-      excursaoId: 1,
-      nome: "Ana Silva",
-      rg: "12.345.678-9",
-      idade: 35,
-      telefone: "(11) 99999-9999",
-      poltrona: 15,
-      statusPagamento: "pago"
-    },
-    {
-      id: 2,
-      excursaoId: 1,
-      nome: "Carlos Santos",
-      rg: "98.765.432-1",
-      idade: 42,
-      telefone: "(11) 88888-8888",
-      poltrona: 16,
-      statusPagamento: "pendente"
+  const handleSavePassageiro = (passageiro: any) => {
+    if (selectedPassageiro) {
+      setPassageiros(passageiros.map(p => p.id === selectedPassageiro.id ? passageiro : p))
+    } else {
+      setPassageiros([...passageiros, passageiro])
     }
-  ]
+    setSelectedPassageiro(null)
+  }
+
+  const handleEditPassageiro = (passageiro: any) => {
+    setSelectedPassageiro(passageiro)
+    setIsPassageiroDialogOpen(true)
+  }
+
+  const handleRemovePassageiro = (id: number) => {
+    setPassageiros(passageiros.filter(p => p.id !== id))
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -197,7 +218,15 @@ export default function Excursoes() {
               </div>
             </div>
             <DialogFooter>
-              <Button type="submit" className="bg-gradient-primary text-white">
+              <Button 
+                type="submit" 
+                className="bg-gradient-primary text-white"
+                onClick={() => {
+                  console.log("Criando nova excursão...")
+                  // Add logic to save the excursion
+                  setIsCreatingExcursion(false)
+                }}
+              >
                 Criar Excursão
               </Button>
             </DialogFooter>
@@ -345,7 +374,7 @@ export default function Excursoes() {
                         variant="ghost" 
                         size="sm"
                         onClick={() => {
-                          console.log("Visualizar excursão:", excursion.id)
+                          alert(`Detalhes da excursão: ${excursion.destino}`)
                         }}
                       >
                         <Eye className="h-4 w-4" />
@@ -354,7 +383,7 @@ export default function Excursoes() {
                         variant="ghost" 
                         size="sm"
                         onClick={() => {
-                          console.log("Editar excursão:", excursion.id)
+                          alert(`Editar excursão: ${excursion.destino}`)
                         }}
                       >
                         <Edit className="h-4 w-4" />
@@ -379,7 +408,8 @@ export default function Excursoes() {
             variant="outline" 
             size="sm"
             onClick={() => {
-              console.log("Adicionar novo passageiro")
+              setSelectedPassageiro(null)
+              setIsPassageiroDialogOpen(true)
             }}
           >
             <Plus className="mr-2 h-4 w-4" />
@@ -396,10 +426,11 @@ export default function Excursoes() {
                 <TableHead>Telefone</TableHead>
                 <TableHead>Poltrona</TableHead>
                 <TableHead>Pagamento</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {passengers.map((passenger) => (
+              {passageiros.map((passenger) => (
                 <TableRow key={passenger.id}>
                   <TableCell className="font-medium text-foreground">
                     {passenger.nome}
@@ -417,12 +448,32 @@ export default function Excursoes() {
                     <Badge variant="outline">{passenger.poltrona}</Badge>
                   </TableCell>
                   <TableCell>{getPaymentBadge(passenger.statusPagamento)}</TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => handleEditPassageiro(passenger)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleEditPassageiro(passenger)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleRemovePassageiro(passenger.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <PassageiroDialog
+        open={isPassageiroDialogOpen}
+        onOpenChange={setIsPassageiroDialogOpen}
+        passageiro={selectedPassageiro}
+        onSave={handleSavePassageiro}
+      />
     </div>
   )
 }

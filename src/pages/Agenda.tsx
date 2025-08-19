@@ -30,7 +30,8 @@ import {
   Plus, 
   Filter,
   Edit,
-  Trash2
+  Trash2,
+  Settings
 } from "lucide-react"
 
 export default function Agenda() {
@@ -226,13 +227,96 @@ export default function Agenda() {
           <p className="text-muted-foreground">Calendário integrado do sistema</p>
         </div>
 
-        <Dialog open={isAddingEvent} onOpenChange={setIsAddingEvent}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-primary text-white shadow-glow">
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Evento
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={isAddingEvent} onOpenChange={setIsAddingEvent}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-primary text-white shadow-glow">
+                <Plus className="mr-2 h-4 w-4" />
+                Novo Evento
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[525px]">
+              <DialogHeader>
+                <DialogTitle>Novo Evento</DialogTitle>
+                <DialogDescription>
+                  Adicione um novo evento à agenda
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="titulo" className="text-right">Título</Label>
+                  <Input 
+                    id="titulo" 
+                    className="col-span-3"
+                    value={formData.titulo}
+                    onChange={(e) => setFormData({...formData, titulo: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="tipo" className="text-right">Tipo</Label>
+                  <Select value={formData.tipo} onValueChange={(value) => {
+                    const eventType = eventTypes.find(t => t.value === value)
+                    setFormData({...formData, tipo: value, cor: eventType?.color || "#3b82f6"})
+                  }}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Selecione o tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {eventTypes.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: type.color }}
+                            />
+                            {type.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="data" className="text-right">Data</Label>
+                  <Input 
+                    id="data" 
+                    type="date"
+                    className="col-span-3"
+                    value={formData.data}
+                    onChange={(e) => setFormData({...formData, data: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="status" className="text-right">Status</Label>
+                  <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="agendado">Agendado</SelectItem>
+                      <SelectItem value="confirmado">Confirmado</SelectItem>
+                      <SelectItem value="pendente">Pendente</SelectItem>
+                      <SelectItem value="cancelado">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleSaveEvent} className="bg-gradient-primary text-white">
+                  Salvar Evento
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          
+          <Button variant="outline" onClick={() => alert("Gerenciar tipos de evento")}>
+            <Settings className="mr-2 h-4 w-4" />
+            Gerenciar Tipos
+          </Button>
+        </div>
           <DialogContent className="sm:max-w-[525px]">
             <DialogHeader>
               <DialogTitle>Novo Evento</DialogTitle>

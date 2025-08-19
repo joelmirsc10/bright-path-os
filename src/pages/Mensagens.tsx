@@ -252,17 +252,33 @@ export default function Mensagens() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
                     {getStatusIcon(message.status)}
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm font-medium text-foreground">{message.destinatario}</p>
-                      {getStatusBadge(message.status)}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{message.telefone}</p>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{message.mensagem}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(message.dataEnvio).toLocaleString('pt-BR')}
-                    </p>
-                  </div>
+                   <div className="flex-1 space-y-1">
+                     <div className="flex items-center justify-between">
+                       <p className="text-sm font-medium text-foreground">{message.destinatario}</p>
+                       {getStatusBadge(message.status)}
+                     </div>
+                     <p className="text-xs text-muted-foreground">{message.telefone}</p>
+                     <p className="text-sm text-muted-foreground line-clamp-2">{message.mensagem}</p>
+                     <p className="text-xs text-muted-foreground">
+                       {new Date(message.dataEnvio).toLocaleString('pt-BR')}
+                     </p>
+                     <div className="flex gap-2 mt-2">
+                       {message.status === 'enviada' || message.status === 'entregue' ? (
+                         <Button size="sm" variant="outline">
+                           Reenviar
+                         </Button>
+                       ) : message.status === 'pendente' ? (
+                         <>
+                           <Button size="sm" variant="default">
+                             Enviar Agora
+                           </Button>
+                           <Button size="sm" variant="outline">
+                             Editar Mensagem
+                           </Button>
+                         </>
+                       ) : null}
+                     </div>
+                   </div>
                 </div>
               ))}
             </div>

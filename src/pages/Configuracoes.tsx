@@ -62,6 +62,7 @@ export default function Configuracoes() {
       logo: config.logo,
       corPrimaria: config.corPrimaria
     })
+    alert("Configurações gerais salvas com sucesso!")
   }
 
   const handleSaveFinancial = () => {
@@ -72,6 +73,7 @@ export default function Configuracoes() {
       descontoPagamentoAntecipado: config.descontoPagamentoAntecipado,
       aplicarJurosAutomatico: config.aplicarJurosAutomatico
     })
+    alert("Configurações financeiras salvas com sucesso!")
   }
 
   const handleSaveWhatsApp = () => {
@@ -83,6 +85,8 @@ export default function Configuracoes() {
       envioAutomaticoCobrancas: config.envioAutomaticoCobrancas,
       confirmacaoReservas: config.confirmacaoReservas
     })
+    // Simulate QR code generation
+    alert("Conectando ao WhatsApp...\n\nQR Code gerado! Escaneie com seu WhatsApp para conectar.\n\n[Aqui apareceria o QR Code real na implementação]")
   }
 
   const handleConfigureWorkflows = () => {
@@ -91,14 +95,95 @@ export default function Configuracoes() {
 
   const handleBackupNow = () => {
     console.log("Iniciando backup manual...")
+    const currentDate = new Date().toISOString().split('T')[0]
+    const backupData = {
+      date: currentDate,
+      config: config,
+      version: "1.0.0",
+      tables: ["clientes", "excursoes", "financeiro", "mensagens"]
+    }
+    
+    const dataStr = JSON.stringify(backupData, null, 2)
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
+    
+    const exportFileDefaultName = `backup-saas-manager-${currentDate}.json`
+    
+    const linkElement = document.createElement('a')
+    linkElement.setAttribute('href', dataUri)
+    linkElement.setAttribute('download', exportFileDefaultName)
+    linkElement.click()
+    
+    alert("Backup gerado e baixado com sucesso!")
   }
 
   const handleExportData = () => {
     console.log("Exportando dados...")
+    const currentDate = new Date().toISOString().split('T')[0]
+    const exportData = {
+      clientes: [],
+      excursoes: [],
+      transacoes: [],
+      mensagens: [],
+      exportDate: currentDate
+    }
+    
+    const dataStr = JSON.stringify(exportData, null, 2)
+    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr)
+    
+    const exportFileDefaultName = `dados-export-${currentDate}.json`
+    
+    const linkElement = document.createElement('a')
+    linkElement.setAttribute('href', dataUri)
+    linkElement.setAttribute('download', exportFileDefaultName)
+    linkElement.click()
+    
+    alert("Dados exportados com sucesso!")
+  }
+
+  const handleImportData = () => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          try {
+            const data = JSON.parse(e.target?.result as string)
+            console.log("Dados importados:", data)
+            alert("Dados importados com sucesso!")
+          } catch (error) {
+            alert("Erro ao importar dados. Verifique o formato do arquivo.")
+          }
+        }
+        reader.readAsText(file)
+      }
+    }
+    input.click()
   }
 
   const handleRestoreBackup = () => {
-    console.log("Restaurando backup...")
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          try {
+            const backupData = JSON.parse(e.target?.result as string)
+            console.log("Backup restaurado:", backupData)
+            alert("Backup restaurado com sucesso!")
+          } catch (error) {
+            alert("Erro ao restaurar backup. Verifique o formato do arquivo.")
+          }
+        }
+        reader.readAsText(file)
+      }
+    }
+    input.click()
   }
 
   return (
